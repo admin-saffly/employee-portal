@@ -161,6 +161,8 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 [dir=rtl] .refbox{padding:12px 18px 12px 12px}
 .refbox small{display:block;color:var(--ink-3);font-size:12px;font-weight:600;text-align:start}
 .refbox b{font-size:20px;letter-spacing:.04em;color:var(--navy);direction:ltr;display:block}
+.secret{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:default;transition:opacity .2s}
+.secret.hold{opacity:.45}
 .foot-m{display:none;text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:22px}
 
 /* how it works */
@@ -371,7 +373,7 @@ td small{color:var(--ink-3);display:block;font-size:12px}
       </div>
     </div>
     <img class="bg-mark" alt="" data-src="light" aria-hidden="true">
-    <div class="brand-foot"><span>© <span class="yr"></span> Green Sky Capital</span><span data-t="footTag"></span></div>
+    <div class="brand-foot"><span class="secret">© <span class="yr"></span> Green Sky Capital</span><span data-t="footTag"></span></div>
   </aside>
 
   <main class="main">
@@ -419,7 +421,7 @@ td small{color:var(--ink-3);display:block;font-size:12px}
           <button type="button" class="btn btn-p" id="nextBtn"><span id="nextTxt"></span><svg class="i flip"><use href="#i-right"/></svg></button>
         </div>
       </form>
-      <div class="foot-m">© <span class="yr"></span> Green Sky Capital · <span data-t="footTag"></span></div>
+      <div class="foot-m"><span class="secret">© <span class="yr"></span> Green Sky Capital</span> · <span data-t="footTag"></span></div>
     </div>
   </main>
 </div>
@@ -431,7 +433,6 @@ td small{color:var(--ink-3);display:block;font-size:12px}
     <h3 data-t="loginTitle"></h3>
     <p data-t="loginSub"></p>
     <div class="demo-tip hidden" id="demoTip" data-t="demoTip"></div>
-    <div class="first-hint" data-t="firstHint"></div>
     <div class="field"><label for="lgEmail" data-t="email"></label><input class="inp ltr" id="lgEmail" type="email" autocomplete="username" required></div>
     <div class="field"><label for="lgPass" data-t="password"></label><input class="inp ltr" id="lgPass" type="password" autocomplete="current-password" required></div>
     <div class="alert" id="lgAlert"><svg class="i"><use href="#i-alert"/></svg><span id="lgAlertTxt"></span></div>
@@ -911,7 +912,7 @@ async function loadConfig(){
 }
 
 /* =========================================================
-   HR CONSOLE  (open with Ctrl/⌘ + Shift + A, or URL #admin)
+   HR CONSOLE  (open with Ctrl/⌘ + Shift + H, or URL #admin)
    ========================================================= */
 let SESSION = null, ROWS = [], FILTER = {q:'',bu:'',dept:'',loc:'',status:'',kpi:''}, SORT = {k:'updatedAt',asc:false}, PAGE = 0, LAST_LOAD = '';
 
@@ -921,7 +922,8 @@ function openAdmin(){
   else { $('#loginOv').classList.remove('hidden'); $('#demoTip').classList.toggle('hidden', !DEMO); setTimeout(()=>$('#lgEmail').focus(),50); }
 }
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='A'||e.key==='a')){ e.preventDefault(); openAdmin(); }
+  // Ctrl+Shift+H (Chrome/Edge keep Ctrl+Shift+A for tab search) — also Ctrl+Alt+H and the old Ctrl+Shift+A where the browser allows it
+  if (((e.ctrlKey||e.metaKey) && e.shiftKey && (e.code==='KeyH'||e.code==='KeyA')) || (e.ctrlKey && e.altKey && e.code==='KeyH')){ e.preventDefault(); openAdmin(); }
   if (e.key==='Escape'){ if ($('#modalHost').innerHTML) closeModal(); else if ($('#drawerHost').innerHTML) closeDrawer(); else if (!$('#loginOv').classList.contains('hidden')) closeLogin(); }
 });
 window.addEventListener('hashchange', () => { if (location.hash==='#admin') openAdmin(); });
@@ -1294,7 +1296,16 @@ async function demoApi(action, b){
   return {ok:false,error:'UNKNOWN_ACTION'};
 }
 
-/* hidden mobile entry: tap the logo 5 times quickly */
+/* hidden entry: press & hold "© Green Sky Capital" in the footer for 2 seconds (mouse or finger) */
+$$('.secret').forEach(el => {
+  let tm;
+  const start = e => { el.classList.add('hold'); tm = setTimeout(() => { el.classList.remove('hold'); try{ navigator.vibrate && navigator.vibrate(40); }catch(_){} openAdmin(); }, 2000); };
+  const stop = () => { clearTimeout(tm); el.classList.remove('hold'); };
+  el.addEventListener('pointerdown', start);
+  ['pointerup','pointerleave','pointercancel'].forEach(ev => el.addEventListener(ev, stop));
+  el.addEventListener('contextmenu', e => e.preventDefault());
+});
+/* also: tap the logo 5 times quickly */
 let taps = 0, tapT;
 $('#logoTap').addEventListener('click', () => { taps++; clearTimeout(tapT); tapT = setTimeout(()=>taps=0, 1500); if (taps>=5){ taps=0; openAdmin(); } });
 
